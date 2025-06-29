@@ -20,12 +20,22 @@ app.add_middleware(
 )
 
 # Подключение статических файлов
-app.mount("/static", StaticFiles(directory="../"), name="static")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/script.js")
+def get_script():
+    """Отдаем JavaScript файл"""
+    return FileResponse("static/script.js")
+
+@app.get("/style.css")
+def get_style():
+    """Отдаем CSS файл"""
+    return FileResponse("static/style.css")
 
 @app.get("/")
 def read_root():
     """Отдаем главную страницу приложения"""
-    return FileResponse("../index.html")
+    return FileResponse("static/index.html")
 
 @app.get("/api")
 def api_root():
