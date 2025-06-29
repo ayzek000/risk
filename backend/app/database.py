@@ -42,6 +42,19 @@ class SupabaseClient:
         
         response = requests.patch(url, json=data, headers=self.headers)
         return {'data': response.json() if response.status_code == 200 else None, 'error': None if response.status_code == 200 else response.text}
+    
+    def delete(self, table: str, filters: Dict) -> Dict:
+        """Выполняет DELETE запрос"""
+        url = f"{self.url}/rest/v1/{table}"
+        
+        if filters:
+            filter_params = []
+            for key, value in filters.items():
+                filter_params.append(f"{key}=eq.{value}")
+            url += "?" + "&".join(filter_params)
+        
+        response = requests.delete(url, headers=self.headers)
+        return {'data': True if response.status_code == 204 else None, 'error': None if response.status_code == 204 else response.text}
 
 # Загружаем переменные окружения
 load_dotenv()

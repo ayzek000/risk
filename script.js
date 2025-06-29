@@ -424,6 +424,9 @@ async function loadTrades() {
         const tbody = document.getElementById('trades-tbody');
         tbody.innerHTML = '';
         
+        // Сохраняем сделки в кэш для быстрого доступа
+        allTrades = trades || [];
+        
         trades.forEach(trade => {
             const row = document.createElement('tr');
             const tradeDate = trade.trade_date || new Date(trade.created_at).toLocaleDateString('ru-RU');
@@ -438,6 +441,16 @@ async function loadTrades() {
                 <td>${trade.lot_size}</td>
                 <td style="color: ${trade.result > 0 ? 'green' : trade.result < 0 ? 'red' : 'black'}">${trade.result || '0'}</td>
                 <td>${trade.notes || '-'}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-small btn-edit" onclick="openEditModal(${trade.id})">
+                            ✏️ Изменить
+                        </button>
+                        <button class="btn-small btn-delete" onclick="deleteTrade(${trade.id})">
+                            🗑️ Удалить
+                        </button>
+                    </div>
+                </td>
             `;
             tbody.appendChild(row);
         });
@@ -522,6 +535,130 @@ function showInfo(message, title = null) {
     showToast(message, 'info', title);
 }
 
+// Функции редактирования и удаления сделок
+let editingTradeId = null;
+let allTrades = []; // Кэш всех сделок для быстрого поиска
+
+async function openEditModal(tradeId) {
+    console.log('Opening edit modal for trade:', tradeId);
+    
+    // Находим сделку в кэше
+    const trade = allTrades.find(t => t.id === tradeId);
+    if (!trade) {
+        showError('Сделка не найдена');
+        return;
+    }
+    
+    editingTradeId = tradeId;
+    
+    // Заполняем форму данными сделки
+    document.getElementById('edit-trade-id').value = trade.id;
+    document.getElementById('edit-instrument').value = trade.instrument || '';
+    document.getElementById('edit-timeframe').value = trade.timeframe || 'H1';
+    document.getElementById('edit-direction').value = trade.direction || 'buy';
+    document.getElementById('edit-risk-amount').value = trade.risk_amount || '';
+    document.getElementById('edit-stop-loss').value = trade.stop_loss_points || '';
+    document.getElementById('edit-lot-size').value = trade.lot_size || '';
+    document.getElementById('edit-result').value = trade.result || '';
+    document.getElementById('edit-notes').value = trade.notes || '';
+    
+    // Показываем модальное окно
+    const modal = document.getElementById('edit-trade-modal');
+    modal.classList.add('show');
+    
+    // Добавляем обработчик для закрытия по клику вне модального окна
+    modal.onclick = function(event) {
+        if (event.target === modal) {
+            closeEditModal();
+        }
+    };
+}
+
+function closeEditModal() {
+    const modal = document.getElementById('edit-trade-modal');
+    modal.classList.remove('show');
+    editingTradeId = null;
+    
+    // Очищаем форму
+    document.getElementById('edit-trade-form').reset();
+}
+
+async function saveEditedTrade() {
+    if (!editingTradeId || !supabase || !currentUser) {
+        showError('Ошибка: нет данных для сохранения');
+        return;
+    }
+    
+    const updatedData = {
+        instrument: document.getElementById('edit-instrument').value,
+        timeframe: document.getElementById('edit-timeframe').value,
+        direction: document.getElementById('edit-direction').value,
+        stop_loss_points: parseFloat(document.getElementById('edit-stop-loss').value) || 0,
+        result: parseFloat(document.getElementById('edit-result').value) || 0,
+        notes: document.getElementById('edit-notes').value
+    };
+    
+    // Пересчитываем размер лота если изменился стоп-лосс
+    const riskAmount = parseFloat(document.getElementById('edit-risk-amount').value) || 0;
+    if (updatedData.stop_loss_points > 0) {
+        updatedData.lot_size = riskAmount / updatedData.stop_loss_points / 10;
+    }
+    
+    try {
+        const { error } = await supabase
+            .from('trades')
+            .update(updatedData)
+            .eq('id', editingTradeId)
+            .eq('user_id', currentUser.id);
+        
+        if (error) {
+            throw new Error(error.message);
+        }
+        
+        showSuccess('Сделка успешно обновлена');
+        closeEditModal();
+        
+        // Обновляем список сделок и информацию о портфеле
+        await loadTrades();
+        await selectPortfolio(); // Обновляем баланс портфеля
+        
+    } catch (error) {
+        showError('Ошибка обновления сделки: ' + error.message);
+    }
+}
+
+async function deleteTrade(tradeId) {
+    if (!confirm('Вы уверены, что хотите удалить эту сделку? Это действие нельзя отменить.')) {
+        return;
+    }
+    
+    if (!supabase || !currentUser) {
+        showError('Необходима авторизация');
+        return;
+    }
+    
+    try {
+        const { error } = await supabase
+            .from('trades')
+            .delete()
+            .eq('id', tradeId)
+            .eq('user_id', currentUser.id);
+        
+        if (error) {
+            throw new Error(error.message);
+        }
+        
+        showSuccess('Сделка успешно удалена');
+        
+        // Обновляем список сделок и информацию о портфеле
+        await loadTrades();
+        await selectPortfolio(); // Обновляем баланс портфеля
+        
+    } catch (error) {
+        showError('Ошибка удаления сделки: ' + error.message);
+    }
+}
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async () => {
     await initSupabase();
@@ -533,4 +670,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.warn('API недоступен:', error.message);
     }
+    
+    // Добавляем обработчик для пересчета лота при изменении стоп-лосса в модальном окне
+    const editStopLoss = document.getElementById('edit-stop-loss');
+    const editLotSize = document.getElementById('edit-lot-size');
+    const editRiskAmount = document.getElementById('edit-risk-amount');
+    
+    if (editStopLoss) {
+        editStopLoss.addEventListener('input', () => {
+            const stopLoss = parseFloat(editStopLoss.value) || 0;
+            const riskAmount = parseFloat(editRiskAmount.value) || 0;
+            
+            if (stopLoss > 0 && riskAmount > 0) {
+                const lotSize = riskAmount / stopLoss / 10;
+                editLotSize.value = lotSize.toFixed(4);
+            }
+        });
+    }
+    
+    // Закрытие модального окна по Escape
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeEditModal();
+        }
+    });
 }); 

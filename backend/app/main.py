@@ -143,6 +143,57 @@ async def create_trade(trade: Trade):
     
     return result['data']
 
+class TradeUpdate(BaseModel):
+    instrument: Optional[str] = None
+    timeframe: Optional[str] = None
+    direction: Optional[str] = None
+    stop_loss_points: Optional[float] = None
+    lot_size: Optional[float] = None
+    result: Optional[float] = None
+    notes: Optional[str] = None
+
+@app.put("/trades/{trade_id}")
+async def update_trade(trade_id: int, trade_update: TradeUpdate):
+    """Обновить сделку"""
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase не настроен")
+    
+    # Получаем только непустые поля для обновления
+    update_data = {k: v for k, v in trade_update.dict().items() if v is not None}
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="Нет данных для обновления")
+    
+    result = supabase.update('trades', update_data, filters={'id': trade_id})
+    if result['error']:
+        raise HTTPException(status_code=500, detail=result['error'])
+    
+    if not result['data']:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    
+    return result['data']
+
+@app.delete("/trades/{trade_id}")
+async def delete_trade(trade_id: int):
+    """Удалить сделку"""
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase не настроен")
+    
+    # Сначала проверяем существование сделки
+    result = supabase.select('trades', filters={'id': trade_id})
+    if result['error']:
+        raise HTTPException(status_code=500, detail=result['error'])
+    
+    if not result['data']:
+        raise HTTPException(status_code=404, detail="Сделка не найдена")
+    
+    # Удаляем сделку
+    result = supabase.delete('trades', filters={'id': trade_id})
+    if result['error']:
+        raise HTTPException(status_code=500, detail=result['error'])
+    
+    return {"message": "Сделка успешно удалена", "trade_id": trade_id}
+
 # Статические файлы (фронтенд)
 if os.path.exists("../"):
     app.mount("/", StaticFiles(directory="../", html=True), name="static")
