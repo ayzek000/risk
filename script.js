@@ -341,7 +341,7 @@ async function calculateLot() {
         document.getElementById('calculation-result').innerHTML = `
             <div class="result">
                 <h4>Результат расчета:</h4>
-                <p><strong>Риск:</strong> ${result.risk} ₽</p>
+                <p><strong>Риск:</strong> ${result.risk} $</p>
                 <p><strong>Стоп-лосс:</strong> ${result.stop_loss} пунктов</p>
                 <p><strong>Размер лота:</strong> ${result.lot_size}</p>
                 <p><em>Формула: Лот = Риск ÷ Стоп-лосс ÷ 10</em></p>
