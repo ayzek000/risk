@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор размера лота</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .result {
+            background: #d4edda;
+            color: #155724;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+
+        .calculation-step {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Калькулятор лота</h1>
+            <p>Профессиональный расчет размера позиции для трейдеров</p>
+        </div>
+
+        <div class="card">
+            <h3>🎯 Параметры расчета</h3>
+            
+            <div class="form-group">
+                <label for="balance">Баланс счета (₽):</label>
+                <input type="number" id="balance" placeholder="10000" step="0.01" value="10000">
+            </div>
+
+            <div class="input-row">
+                <div class="form-group">
+                    <label for="risk-percent">Риск на сделку (%):</label>
+                    <input type="number" id="risk-percent" placeholder="0.5" step="0.01" value="0.5">
+                </div>
+                <div class="form-group">
+                    <label for="stop-loss">Стоп-лосс (пункты):</label>
+                    <input type="number" id="stop-loss" placeholder="100" step="0.1" value="100">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="instrument">Инструмент (опционально):</label>
+                <input type="text" id="instrument" placeholder="EURUSD, GBPUSD, XAUUSD...">
+            </div>
+
+            <button class="btn" onclick="calculateLot()">Рассчитать размер лота</button>
+            
+            <div id="result-container"></div>
+        </div>
+
+        <div class="card">
+            <h3>📚 Как работает калькулятор</h3>
+            <div class="calculation-step">
+                <strong>Шаг 1:</strong> Рассчитывается сумма риска<br>
+                <em>Риск = Баланс × Процент риска / 100</em>
+            </div>
+            <div class="calculation-step">
+                <strong>Шаг 2:</strong> Определяется размер лота<br>
+                <em>Лот = Риск ÷ Стоп-лосс ÷ 10</em>
+            </div>
+            <div class="calculation-step">
+                <strong>Формула:</strong> Лот = (Баланс × Риск%) ÷ Стоп-лосс ÷ 10
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function calculateLot() {
+            // Получаем значения
+            const balance = parseFloat(document.getElementById('balance').value);
+            const riskPercent = parseFloat(document.getElementById('risk-percent').value);
+            const stopLoss = parseFloat(document.getElementById('stop-loss').value);
+            const instrument = document.getElementById('instrument').value;
+            
+            // Проверяем входные данные
+            if (!balance || balance <= 0) {
+                showError('Введите корректный баланс');
+                return;
+            }
+            
+            if (!riskPercent || riskPercent <= 0) {
+                showError('Введите корректный процент риска');
+                return;
+            }
+            
+            if (!stopLoss || stopLoss <= 0) {
+                showError('Введите корректный стоп-лосс');
+                return;
+            }
+            
+            // Расчеты
+            const riskAmount = (balance * riskPercent) / 100;
+            const lotSize = riskAmount / stopLoss / 10;
+            
+            // Отображаем результат
+            const resultContainer = document.getElementById('result-container');
+            resultContainer.innerHTML = `
+                <div class="result">
+                    <h4>✅ Результат расчета${instrument ? ' для ' + instrument : ''}:</h4>
+                    <br>
+                    <div class="calculation-step">
+                        <strong>Шаг 1:</strong> Сумма риска = ${balance.toLocaleString('ru-RU')} × ${riskPercent}% = <strong>${riskAmount.toFixed(2)} ₽</strong>
+                    </div>
+                    <div class="calculation-step">
+                        <strong>Шаг 2:</strong> Размер лота = ${riskAmount.toFixed(2)} ÷ ${stopLoss} ÷ 10 = <strong>${lotSize.toFixed(4)}</strong>
+                    </div>
+                    <br>
+                    <div style="font-size: 1.2em; text-align: center; background: #155724; color: white; padding: 15px; border-radius: 8px;">
+                        <strong>Рекомендуемый размер лота: ${lotSize.toFixed(4)}</strong>
+                    </div>
+                    <br>
+                    <div style="font-size: 0.9em; color: #666;">
+                        <strong>Максимальная потеря:</strong> ${riskAmount.toFixed(2)} ₽ (${riskPercent}% от баланса)<br>
+                        <strong>Процент от баланса:</strong> ${((riskAmount / balance) * 100).toFixed(2)}%
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showError(message) {
+            const resultContainer = document.getElementById('result-container');
+            resultContainer.innerHTML = `
+                <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-top: 20px;">
+                    <strong>Ошибка:</strong> ${message}
+                </div>
+            `;
+        }
+        
+        // Автоматический расчет при изменении значений
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputs = ['balance', 'risk-percent', 'stop-loss'];
+            inputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', function() {
+                    // Очищаем результат при изменении значений
+                    document.getElementById('result-container').innerHTML = '';
+                });
+            });
+        });
+        
+        // Расчет при нажатии Enter
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                calculateLot();
+            }
+        });
+    </script>
+</body>
+</html> 

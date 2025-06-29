@@ -1,0 +1,9 @@
+# Supabase Configuration
+SUPABASE_URL=your_supabase_project_url_here
+SUPABASE_ANON_KEY=your_supabase_anon_key_here
+
+# Получите эти ключи после настройки Supabase:
+# 1. Создайте проект на https://supabase.com
+# 2. Идите в Settings → API
+# 3. Скопируйте Project URL и anon public key
+# 4. Создайте файл .env и вставьте ваши ключи 
