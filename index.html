@@ -2,7 +2,10 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>Система управления рисками</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -267,23 +270,204 @@
             color: #666;
         }
 
+        /* Улучшенная мобильная адаптация */
         @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
+            .container {
+                padding: 10px;
             }
             
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .card {
+                padding: 15px;
+            }
+            
+            .card h3 {
+                font-size: 1.1rem;
+                margin-bottom: 12px;
+            }
+            
+            input, select, textarea {
+                padding: 10px;
+                font-size: 16px; /* Предотвращает зум на iOS */
+            }
+            
+            .btn {
+                padding: 14px 20px;
+                font-size: 16px;
+                margin-top: 8px;
+            }
+            
+            /* Toast для мобильных */
             .toast-container {
-                left: 20px;
-                right: 20px;
+                left: 10px;
+                right: 10px;
+                top: 10px;
                 max-width: none;
             }
             
             .toast {
                 transform: translateY(-100px);
+                padding: 14px 16px;
+                margin-bottom: 8px;
             }
             
             .toast.show {
                 transform: translateY(0);
+            }
+            
+            .toast-title {
+                font-size: 14px;
+            }
+            
+            .toast-message {
+                font-size: 13px;
+            }
+            
+            /* Улучшение таблиц на мобильных */
+            .trades-table {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            table {
+                min-width: 600px;
+                font-size: 14px;
+            }
+            
+            th, td {
+                padding: 8px 6px;
+                white-space: nowrap;
+            }
+            
+            /* Формы на мобильных */
+            .form-group {
+                margin-bottom: 12px;
+            }
+            
+            label {
+                font-size: 14px;
+                margin-bottom: 4px;
+            }
+            
+            /* Портфолио инфо */
+            .portfolio-info {
+                padding: 12px;
+                font-size: 14px;
+            }
+            
+            /* Результаты расчетов */
+            .result {
+                padding: 12px;
+                font-size: 14px;
+            }
+        }
+
+        /* Очень маленькие экраны */
+        @media (max-width: 480px) {
+            .container {
+                padding: 8px;
+            }
+            
+            .header {
+                margin-bottom: 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+                margin-bottom: 8px;
+            }
+            
+            .header p {
+                font-size: 14px;
+            }
+            
+            .card {
+                padding: 12px;
+                border-radius: 8px;
+            }
+            
+            .auth-section {
+                padding: 15px;
+                border-radius: 8px;
+            }
+            
+            .btn {
+                padding: 12px 16px;
+                font-size: 15px;
+            }
+            
+            input, select, textarea {
+                padding: 8px;
+                border-radius: 6px;
+            }
+            
+            /* Toast для очень маленьких экранов */
+            .toast-container {
+                left: 8px;
+                right: 8px;
+                top: 8px;
+            }
+            
+            .toast {
+                padding: 12px;
+                border-radius: 8px;
+            }
+            
+            .toast-icon {
+                font-size: 18px;
+            }
+            
+            /* Таблица на очень маленьких экранах */
+            table {
+                font-size: 12px;
+            }
+            
+            th, td {
+                padding: 6px 4px;
+            }
+        }
+
+        /* Ландшафтная ориентация на мобильных */
+        @media (max-width: 768px) and (orientation: landscape) {
+            .header {
+                margin-bottom: 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.6rem;
+            }
+            
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            
+            .card {
+                padding: 12px;
+            }
+        }
+
+        /* Улучшения для касаний */
+        @media (hover: none) and (pointer: coarse) {
+            .btn {
+                min-height: 44px; /* Минимальный размер для касаний */
+            }
+            
+            .toast-close {
+                min-width: 44px;
+                min-height: 44px;
+            }
+            
+            input, select, textarea {
+                min-height: 44px;
             }
         }
     </style>
