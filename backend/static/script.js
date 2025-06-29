@@ -454,6 +454,10 @@ async function loadTrades() {
             `;
             tbody.appendChild(row);
         });
+        
+        // Обновляем аналитику после загрузки сделок
+        updateAnalytics();
+        
     } catch (error) {
         showError('Ошибка загрузки сделок: ' + error.message);
     }
@@ -538,6 +542,8 @@ function showInfo(message, title = null) {
 // Функции редактирования и удаления сделок
 let editingTradeId = null;
 let allTrades = []; // Кэш всех сделок для быстрого поиска
+let profitChart = null; // Глобальная переменная для графика
+let currentChartPeriod = '7d'; // Текущий период графика
 
 async function openEditModal(tradeId) {
     console.log('Opening edit modal for trade:', tradeId);
@@ -684,6 +690,459 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// Функции для аналитики и графиков
+function createProfitChart(trades, period) {
+    const ctx = document.getElementById('profitChart').getContext('2d');
+    
+    // Уничтожаем старый график если существует
+    if (profitChart) {
+        profitChart.destroy();
+    }
+    
+    // Фильтруем данные по периоду
+    const filteredTrades = filterTradesByPeriod(trades, period);
+    
+    // Сортируем по дате
+    const sortedTrades = filteredTrades.sort((a, b) => 
+        new Date(a.created_at) - new Date(b.created_at)
+    );
+    
+    // Создаем данные для графика (накопительная прибыль)
+    let cumulativeProfit = 0;
+    const chartData = [];
+    const labels = [];
+    
+    sortedTrades.forEach(trade => {
+        cumulativeProfit += trade.result || 0;
+        chartData.push(cumulativeProfit);
+        labels.push(new Date(trade.created_at).toLocaleDateString('ru-RU'));
+    });
+    
+    // Добавляем начальную точку (0)
+    if (chartData.length > 0) {
+        chartData.unshift(0);
+        labels.unshift('Начало');
+    }
+    
+    profitChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Накопительная P&L ($)',
+                data: chartData,
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#667eea',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    },
+                    ticks: {
+                        maxTicksLimit: 8
+                    }
+                },
+                y: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(2);
+                        }
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    hoverBackgroundColor: '#667eea'
+                }
+            }
+        }
+    });
+}
+
+function filterTradesByPeriod(trades, period) {
+    const now = new Date();
+    let startDate = new Date();
+    
+    switch(period) {
+        case '7d':
+            startDate.setDate(now.getDate() - 7);
+            break;
+        case '1m':
+            startDate.setMonth(now.getMonth() - 1);
+            break;
+        case '3m':
+            startDate.setMonth(now.getMonth() - 3);
+            break;
+        case 'all':
+        default:
+            return trades;
+    }
+    
+    return trades.filter(trade => new Date(trade.created_at) >= startDate);
+}
+
+function calculateStatistics(trades) {
+    if (!trades || trades.length === 0) {
+        // Сбрасываем статистику если нет сделок
+        document.getElementById('total-pnl').textContent = '$0';
+        document.getElementById('total-trades').textContent = '0';
+        document.getElementById('winning-trades').textContent = '0';
+        document.getElementById('win-rate').textContent = '0%';
+        document.getElementById('avg-win').textContent = '$0';
+        document.getElementById('avg-loss').textContent = '$0';
+        return;
+    }
+    
+    const totalPnL = trades.reduce((sum, trade) => sum + (trade.result || 0), 0);
+    const totalTrades = trades.length;
+    const winningTrades = trades.filter(trade => (trade.result || 0) > 0);
+    const losingTrades = trades.filter(trade => (trade.result || 0) < 0);
+    
+    const winRate = totalTrades > 0 ? (winningTrades.length / totalTrades) * 100 : 0;
+    const avgWin = winningTrades.length > 0 ? 
+        winningTrades.reduce((sum, trade) => sum + trade.result, 0) / winningTrades.length : 0;
+    const avgLoss = losingTrades.length > 0 ? 
+        losingTrades.reduce((sum, trade) => sum + trade.result, 0) / losingTrades.length : 0;
+    
+    // Обновляем статистику
+    const totalPnLElement = document.getElementById('total-pnl');
+    totalPnLElement.textContent = `$${totalPnL.toFixed(2)}`;
+    totalPnLElement.parentElement.className = `stat-item ${totalPnL >= 0 ? 'stat-positive' : 'stat-negative'}`;
+    
+    document.getElementById('total-trades').textContent = totalTrades;
+    document.getElementById('winning-trades').textContent = winningTrades.length;
+    document.getElementById('win-rate').textContent = `${winRate.toFixed(1)}%`;
+    document.getElementById('avg-win').textContent = `$${avgWin.toFixed(2)}`;
+    document.getElementById('avg-loss').textContent = `$${avgLoss.toFixed(2)}`;
+}
+
+function calculateInstrumentStats(trades) {
+    const instrumentsContainer = document.getElementById('instruments-stats');
+    
+    if (!trades || trades.length === 0) {
+        instrumentsContainer.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">Нет данных</p>';
+        return;
+    }
+    
+    // Группируем сделки по инструментам
+    const instrumentStats = {};
+    
+    trades.forEach(trade => {
+        const instrument = trade.instrument || 'Неизвестный';
+        if (!instrumentStats[instrument]) {
+            instrumentStats[instrument] = {
+                trades: 0,
+                totalResult: 0,
+                winningTrades: 0
+            };
+        }
+        
+        instrumentStats[instrument].trades++;
+        instrumentStats[instrument].totalResult += trade.result || 0;
+        if ((trade.result || 0) > 0) {
+            instrumentStats[instrument].winningTrades++;
+        }
+    });
+    
+    // Сортируем по количеству сделок
+    const sortedInstruments = Object.entries(instrumentStats)
+        .sort(([,a], [,b]) => b.trades - a.trades);
+    
+    // Генерируем HTML
+    let html = '';
+    sortedInstruments.forEach(([instrument, stats]) => {
+        const winRate = (stats.winningTrades / stats.trades * 100).toFixed(1);
+        const resultClass = stats.totalResult >= 0 ? 'stat-positive' : 'stat-negative';
+        
+        html += `
+            <div class="instrument-item">
+                <div>
+                    <div class="instrument-name">${instrument}</div>
+                    <div class="instrument-trades">${stats.trades} сделок • ${winRate}% прибыльных</div>
+                </div>
+                <div class="instrument-result ${resultClass}">
+                    $${stats.totalResult.toFixed(2)}
+                </div>
+            </div>
+        `;
+    });
+    
+    instrumentsContainer.innerHTML = html;
+}
+
+function changeChartPeriod(period) {
+    currentChartPeriod = period;
+    
+    // Обновляем активную кнопку
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    // Перестраиваем график
+    createProfitChart(allTrades, period);
+}
+
+function updateAnalytics() {
+    if (!allTrades || allTrades.length === 0) {
+        // Если нет сделок, показываем пустые данные
+        calculateStatistics([]);
+        calculateInstrumentStats([]);
+        updateDashboard([]);
+        if (profitChart) {
+            profitChart.destroy();
+            profitChart = null;
+        }
+        return;
+    }
+    
+    // Обновляем все аналитические данные
+    createProfitChart(allTrades, currentChartPeriod);
+    calculateStatistics(allTrades);
+    calculateInstrumentStats(allTrades);
+    updateDashboard(allTrades);
+}
+
+// Функции для дашборда
+function updateDashboard(trades) {
+    if (!trades || trades.length === 0) {
+        resetDashboard();
+        return;
+    }
+    
+    const metrics = calculateAdvancedMetrics(trades);
+    updatePerformanceIndicators(metrics);
+    updateSummaryCards(metrics);
+}
+
+function calculateAdvancedMetrics(trades) {
+    const totalTrades = trades.length;
+    const winningTrades = trades.filter(trade => (trade.result || 0) > 0);
+    const losingTrades = trades.filter(trade => (trade.result || 0) < 0);
+    
+    const totalProfit = winningTrades.reduce((sum, trade) => sum + trade.result, 0);
+    const totalLoss = Math.abs(losingTrades.reduce((sum, trade) => sum + trade.result, 0));
+    const totalPnL = trades.reduce((sum, trade) => sum + (trade.result || 0), 0);
+    
+    const winRate = totalTrades > 0 ? (winningTrades.length / totalTrades) * 100 : 0;
+    const profitFactor = totalLoss > 0 ? totalProfit / totalLoss : 0;
+    const avgTrade = totalTrades > 0 ? totalPnL / totalTrades : 0;
+    const avgRisk = totalTrades > 0 ? trades.reduce((sum, trade) => sum + (trade.risk_amount || 0), 0) / totalTrades : 0;
+    
+    // Лучшая и худшая сделки
+    const results = trades.map(trade => trade.result || 0);
+    const bestTrade = results.length > 0 ? Math.max(...results) : 0;
+    const worstTrade = results.length > 0 ? Math.min(...results) : 0;
+    
+    // Серии побед и поражений
+    const streaks = calculateStreaks(trades);
+    
+    // Консистентность (обратная величина стандартного отклонения)
+    const consistency = calculateConsistency(trades);
+    
+    // ROI (если есть данные о начальном балансе)
+    const roi = currentPortfolio && currentPortfolio.initial_balance > 0 ? 
+        (totalPnL / currentPortfolio.initial_balance) * 100 : 0;
+    
+    return {
+        winRate,
+        profitFactor,
+        avgTrade,
+        consistency,
+        totalProfit,
+        totalLoss,
+        avgRisk,
+        roi,
+        bestTrade,
+        worstTrade,
+        maxWinningStreak: streaks.maxWinning,
+        maxLosingStreak: streaks.maxLosing
+    };
+}
+
+function calculateStreaks(trades) {
+    let maxWinning = 0;
+    let maxLosing = 0;
+    let currentWinning = 0;
+    let currentLosing = 0;
+    
+    // Сортируем по дате
+    const sortedTrades = trades.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    
+    sortedTrades.forEach(trade => {
+        const result = trade.result || 0;
+        
+        if (result > 0) {
+            currentWinning++;
+            currentLosing = 0;
+            maxWinning = Math.max(maxWinning, currentWinning);
+        } else if (result < 0) {
+            currentLosing++;
+            currentWinning = 0;
+            maxLosing = Math.max(maxLosing, currentLosing);
+        } else {
+            currentWinning = 0;
+            currentLosing = 0;
+        }
+    });
+    
+    return { maxWinning, maxLosing };
+}
+
+function calculateConsistency(trades) {
+    if (trades.length < 2) return 0;
+    
+    const results = trades.map(trade => trade.result || 0);
+    const mean = results.reduce((sum, val) => sum + val, 0) / results.length;
+    const variance = results.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / results.length;
+    const stdDev = Math.sqrt(variance);
+    
+    // Консистентность как обратная величина коэффициента вариации
+    if (mean === 0) return 0;
+    const coefficientOfVariation = Math.abs(stdDev / mean);
+    return Math.max(0, 100 - (coefficientOfVariation * 100));
+}
+
+function updatePerformanceIndicators(metrics) {
+    // Win Rate
+    updateIndicator('winrate', metrics.winRate, '%', 
+        metrics.winRate >= 60 ? 'excellent' : 
+        metrics.winRate >= 50 ? 'good' : 
+        metrics.winRate >= 40 ? 'warning' : 'danger');
+    
+    // Profit Factor
+    updateIndicator('profit-factor', metrics.profitFactor, '', 
+        metrics.profitFactor >= 2 ? 'excellent' : 
+        metrics.profitFactor >= 1.5 ? 'good' : 
+        metrics.profitFactor >= 1 ? 'warning' : 'danger');
+    
+    // Average Trade
+    updateIndicator('avg-trade', metrics.avgTrade, '$', 
+        metrics.avgTrade >= 50 ? 'excellent' : 
+        metrics.avgTrade >= 10 ? 'good' : 
+        metrics.avgTrade >= 0 ? 'warning' : 'danger');
+    
+    // Consistency
+    updateIndicator('consistency', metrics.consistency, '%', 
+        metrics.consistency >= 80 ? 'excellent' : 
+        metrics.consistency >= 60 ? 'good' : 
+        metrics.consistency >= 40 ? 'warning' : 'danger');
+}
+
+function updateIndicator(type, value, suffix, level) {
+    const valueElement = document.getElementById(`dashboard-${type}`);
+    const progressElement = document.getElementById(`${type}-progress`);
+    const cardElement = document.getElementById(`${type}-indicator`);
+    
+    if (valueElement) {
+        if (suffix === '$') {
+            valueElement.textContent = `$${value.toFixed(2)}`;
+        } else if (suffix === '%') {
+            valueElement.textContent = `${value.toFixed(1)}%`;
+        } else {
+            valueElement.textContent = value.toFixed(2);
+        }
+    }
+    
+    if (progressElement) {
+        let progressValue = 0;
+        if (type === 'winrate' || type === 'consistency') {
+            progressValue = Math.min(100, value);
+        } else if (type === 'profit-factor') {
+            progressValue = Math.min(100, (value / 3) * 100);
+        } else if (type === 'avg-trade') {
+            progressValue = Math.min(100, Math.max(0, (value + 100) / 2));
+        }
+        
+        progressElement.style.width = `${progressValue}%`;
+        progressElement.className = `progress-fill ${level}`;
+    }
+    
+    if (cardElement) {
+        cardElement.className = `indicator-card ${level}`;
+    }
+}
+
+function updateSummaryCards(metrics) {
+    // Торговая статистика
+    document.getElementById('best-trade').textContent = `$${metrics.bestTrade.toFixed(2)}`;
+    document.getElementById('worst-trade').textContent = `$${metrics.worstTrade.toFixed(2)}`;
+    document.getElementById('max-winning-streak').textContent = metrics.maxWinningStreak;
+    document.getElementById('max-losing-streak').textContent = metrics.maxLosingStreak;
+    
+    // Финансовые показатели
+    document.getElementById('total-profit').textContent = `$${metrics.totalProfit.toFixed(2)}`;
+    document.getElementById('total-loss').textContent = `$${metrics.totalLoss.toFixed(2)}`;
+    document.getElementById('avg-risk').textContent = `$${metrics.avgRisk.toFixed(2)}`;
+    document.getElementById('roi-metric').textContent = `${metrics.roi.toFixed(1)}%`;
+    
+    // Цветовая индикация
+    const bestTradeEl = document.getElementById('best-trade');
+    const worstTradeEl = document.getElementById('worst-trade');
+    const roiEl = document.getElementById('roi-metric');
+    
+    bestTradeEl.style.color = metrics.bestTrade > 0 ? '#28a745' : '#dc3545';
+    worstTradeEl.style.color = metrics.worstTrade < 0 ? '#dc3545' : '#28a745';
+    roiEl.style.color = metrics.roi > 0 ? '#28a745' : metrics.roi < 0 ? '#dc3545' : '#6c757d';
+}
+
+function resetDashboard() {
+    // Сброс индикаторов
+    ['winrate', 'profit-factor', 'avg-trade', 'consistency'].forEach(type => {
+        const valueElement = document.getElementById(`dashboard-${type}`);
+        const progressElement = document.getElementById(`${type}-progress`);
+        const cardElement = document.getElementById(`${type}-indicator`);
+        
+        if (valueElement) valueElement.textContent = type.includes('factor') ? '0.00' : '0%';
+        if (progressElement) {
+            progressElement.style.width = '0%';
+            progressElement.className = 'progress-fill';
+        }
+        if (cardElement) cardElement.className = 'indicator-card';
+    });
+    
+    // Сброс сводных карточек
+    const summaryElements = [
+        'best-trade', 'worst-trade', 'max-winning-streak', 'max-losing-streak',
+        'total-profit', 'total-loss', 'avg-risk', 'roi-metric'
+    ];
+    
+    summaryElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            if (id.includes('streak')) {
+                element.textContent = '0';
+            } else if (id.includes('roi')) {
+                element.textContent = '0%';
+            } else {
+                element.textContent = '$0';
+            }
+            element.style.color = '';
+        }
+    });
+}
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async () => {
