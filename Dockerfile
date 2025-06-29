@@ -15,4 +15,5 @@ COPY . .
 EXPOSE 8000
 
 # Запускаем приложение
-CMD ["python", "backend/test_server.py"] 
+WORKDIR /app/backend
+CMD ["python", "test_server.py"] 
