@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: risk-management-api
+    env: python
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "cd backend && python test_server.py"
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12 
