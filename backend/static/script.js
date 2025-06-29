@@ -1144,9 +1144,96 @@ function resetDashboard() {
     });
 }
 
+// Инициализация floating labels
+function initFloatingLabels() {
+    const authInputs = document.querySelectorAll('.auth-section input');
+    
+    authInputs.forEach(input => {
+        const formGroup = input.closest('.form-group');
+        const label = formGroup.querySelector('label');
+        
+        // Создаем floating label
+        if (label && !formGroup.querySelector('.floating-label')) {
+            const floatingLabel = document.createElement('div');
+            floatingLabel.className = 'floating-label';
+            floatingLabel.textContent = label.textContent;
+            formGroup.appendChild(floatingLabel);
+            
+            // Скрываем оригинальный label
+            label.style.display = 'none';
+        }
+        
+        // Обработчики событий
+        input.addEventListener('focus', () => {
+            formGroup.classList.add('focused');
+            updateFloatingLabel(formGroup, input);
+        });
+        
+        input.addEventListener('blur', () => {
+            formGroup.classList.remove('focused');
+            updateFloatingLabel(formGroup, input);
+        });
+        
+        input.addEventListener('input', () => {
+            updateFloatingLabel(formGroup, input);
+        });
+        
+        // Инициализация состояния
+        updateFloatingLabel(formGroup, input);
+    });
+}
+
+function updateFloatingLabel(formGroup, input) {
+    if (input.value.trim() !== '') {
+        formGroup.classList.add('filled');
+    } else {
+        formGroup.classList.remove('filled');
+    }
+}
+
+// Функция для добавления loading состояния к кнопке
+function setButtonLoading(button, isLoading) {
+    if (isLoading) {
+        button.classList.add('loading');
+        button.disabled = true;
+    } else {
+        button.classList.remove('loading');
+        button.disabled = false;
+    }
+}
+
+// Обновляем функции signIn и signUp для использования loading состояний
+const originalSignIn = signIn;
+const originalSignUp = signUp;
+
+signIn = async function() {
+    const loginBtn = document.querySelector('.auth-section .btn:not(.btn-secondary)');
+    setButtonLoading(loginBtn, true);
+    
+    try {
+        await originalSignIn();
+    } finally {
+        setButtonLoading(loginBtn, false);
+    }
+};
+
+signUp = async function() {
+    const registerBtn = document.querySelector('.auth-section .btn-secondary');
+    setButtonLoading(registerBtn, true);
+    
+    try {
+        await originalSignUp();
+    } finally {
+        setButtonLoading(registerBtn, false);
+    }
+};
+
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async () => {
     await initSupabase();
+    
+    // Инициализируем floating labels
+    initFloatingLabels();
     
     // Проверяем работу API
     try {

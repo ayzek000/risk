@@ -669,6 +669,9 @@ async function deleteTrade(tradeId) {
 document.addEventListener('DOMContentLoaded', async () => {
     await initSupabase();
     
+    // Инициализируем floating labels
+    initFloatingLabels();
+    
     // Проверяем работу API
     try {
         const health = await apiCall('/health');
@@ -934,6 +937,64 @@ function updateAnalytics() {
     calculateStatistics(allTrades);
     calculateInstrumentStats(allTrades);
     updateDashboard(allTrades);
+}
+
+// Инициализация floating labels
+function initFloatingLabels() {
+    const authInputs = document.querySelectorAll('.auth-section input');
+    
+    authInputs.forEach(input => {
+        const formGroup = input.closest('.form-group');
+        const label = formGroup.querySelector('label');
+        
+        // Создаем floating label
+        if (label && !formGroup.querySelector('.floating-label')) {
+            const floatingLabel = document.createElement('div');
+            floatingLabel.className = 'floating-label';
+            floatingLabel.textContent = label.textContent;
+            formGroup.appendChild(floatingLabel);
+            
+            // Скрываем оригинальный label
+            label.style.display = 'none';
+        }
+        
+        // Обработчики событий
+        input.addEventListener('focus', () => {
+            formGroup.classList.add('focused');
+            updateFloatingLabel(formGroup, input);
+        });
+        
+        input.addEventListener('blur', () => {
+            formGroup.classList.remove('focused');
+            updateFloatingLabel(formGroup, input);
+        });
+        
+        input.addEventListener('input', () => {
+            updateFloatingLabel(formGroup, input);
+        });
+        
+        // Инициализация состояния
+        updateFloatingLabel(formGroup, input);
+    });
+}
+
+function updateFloatingLabel(formGroup, input) {
+    if (input.value.trim() !== '') {
+        formGroup.classList.add('filled');
+    } else {
+        formGroup.classList.remove('filled');
+    }
+}
+
+// Функция для добавления loading состояния к кнопке
+function setButtonLoading(button, isLoading) {
+    if (isLoading) {
+        button.classList.add('loading');
+        button.disabled = true;
+    } else {
+        button.classList.remove('loading');
+        button.disabled = false;
+    }
 }
 
 // Функции для дашборда

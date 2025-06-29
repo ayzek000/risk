@@ -44,11 +44,288 @@
         }
 
         .auth-section {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
+            position: relative;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 
+                0 8px 32px rgba(31, 38, 135, 0.37),
+                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+            overflow: hidden;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .auth-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(102, 126, 234, 0.1),
+                transparent,
+                rgba(118, 75, 162, 0.1),
+                transparent
+            );
+            animation: authGlow 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes authGlow {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
+        }
+
+        .auth-section > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .auth-section h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            margin-bottom: 30px;
+            letter-spacing: -0.02em;
+        }
+
+        .auth-section .form-group {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .auth-section label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .auth-section input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #2d3748;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-sizing: border-box;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        .auth-section input::placeholder {
+            color: rgba(74, 85, 104, 0.6);
+        }
+
+        .auth-section input:focus {
+            outline: none;
+            border-color: rgba(102, 126, 234, 0.6);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 
+                0 0 0 4px rgba(102, 126, 234, 0.1),
+                0 8px 25px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .auth-section .btn {
+            width: 100%;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            margin-top: 12px;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            touch-action: manipulation;
+            user-select: none;
+        }
+
+        .auth-section .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            transition: left 0.5s;
+        }
+
+        .auth-section .btn:hover::before {
+            left: 100%;
+        }
+
+        .auth-section .btn:not(.btn-secondary) {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .auth-section .btn:not(.btn-secondary):hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        .auth-section .btn:not(.btn-secondary):active {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .auth-section .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #4a5568;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .auth-section .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .auth-section .btn-secondary:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .auth-section #user-info {
+            text-align: center;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .auth-section #user-info h3 {
+            font-size: 1.8rem;
             margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .auth-section #user-info p {
+            font-size: 16px;
+            color: #4a5568;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .auth-section #user-info span {
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .auth-section #login-form {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        /* Floating labels effect */
+        .auth-section .form-group {
+            position: relative;
+        }
+
+        .auth-section .floating-label {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(74, 85, 104, 0.6);
+            font-size: 16px;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: transparent;
+            padding: 0 4px;
+        }
+
+        .auth-section .form-group.focused .floating-label,
+        .auth-section .form-group.filled .floating-label {
+            top: 0;
+            font-size: 12px;
+            font-weight: 600;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 4px;
+        }
+
+        /* Loading animation for buttons */
+        .auth-section .btn.loading {
+            pointer-events: none;
+            position: relative;
+            color: transparent;
+        }
+
+        .auth-section .btn.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         .main-content {
@@ -990,6 +1267,33 @@
             .stats-grid.dashboard {
                 grid-template-columns: 1fr;
             }
+
+            .auth-section {
+                margin: 10px;
+                padding: 24px;
+                border-radius: 20px;
+                max-width: none;
+            }
+
+            .auth-section h3 {
+                font-size: 1.6rem;
+                margin-bottom: 24px;
+            }
+
+            .auth-section .form-group {
+                margin-bottom: 20px;
+            }
+
+            .auth-section input {
+                padding: 14px 16px;
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+
+            .auth-section .btn {
+                padding: 14px 20px;
+                font-size: 14px;
+                letter-spacing: 0.5px;
+            }
         }
 
         /* Мобильные адаптации для модального окна */
@@ -1030,23 +1334,29 @@
         <!-- Аутентификация -->
         <div id="auth-section" class="auth-section">
             <div id="login-form">
-                <h3>Вход в систему</h3>
+                <h3>🔐 Вход в систему</h3>
                 <div class="form-group">
-                    <label for="email">Email:</label>
-                    <input type="email" id="email" placeholder="your@email.com">
+                    <input type="email" id="email" placeholder="your@email.com" autocomplete="email">
+                    <label for="email">Email</label>
                 </div>
                 <div class="form-group">
-                    <label for="password">Пароль:</label>
-                    <input type="password" id="password" placeholder="Ваш пароль">
+                    <input type="password" id="password" placeholder="Введите пароль" autocomplete="current-password">
+                    <label for="password">Пароль</label>
                 </div>
-                <button class="btn" onclick="signIn()">Войти</button>
-                <button class="btn btn-secondary" onclick="signUp()">Регистрация</button>
+                <button class="btn" onclick="signIn()">
+                    <span>Войти</span>
+                </button>
+                <button class="btn btn-secondary" onclick="signUp()">
+                    <span>Создать аккаунт</span>
+                </button>
             </div>
             
             <div id="user-info" class="hidden">
-                <h3>Добро пожаловать!</h3>
+                <h3>✨ Добро пожаловать!</h3>
                 <p>Пользователь: <span id="user-email"></span></p>
-                <button class="btn btn-secondary" onclick="signOut()">Выйти</button>
+                <button class="btn btn-secondary" onclick="signOut()">
+                    <span>Выйти из системы</span>
+                </button>
             </div>
         </div>
 
