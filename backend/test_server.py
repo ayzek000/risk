@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import uvicorn
 import os
 
@@ -17,8 +19,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Подключение статических файлов
+app.mount("/static", StaticFiles(directory="../"), name="static")
+
 @app.get("/")
 def read_root():
+    """Отдаем главную страницу приложения"""
+    return FileResponse("../index.html")
+
+@app.get("/api")
+def api_root():
     return {"message": "Risk Management API"}
 
 @app.get("/health")

@@ -1,5 +1,5 @@
 // Конфигурация
-const API_BASE_URL = 'http://localhost:8001';
+const API_BASE_URL = window.location.origin;
 let supabase = null;
 let currentUser = null;
 let currentPortfolio = null;
