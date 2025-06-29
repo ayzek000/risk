@@ -7,16 +7,27 @@ let lastCalculation = null;
 
 // Инициализация Supabase
 async function initSupabase() {
+    console.log('Initializing Supabase...');
+    console.log('API_BASE_URL:', API_BASE_URL);
+    console.log('window.supabase available:', !!window.supabase);
+    
     try {
         // Получаем конфигурацию Supabase из backend API
         const configResponse = await fetch(`${API_BASE_URL}/config`);
+        console.log('Config response status:', configResponse.status);
+        
         const config = await configResponse.json();
+        console.log('Config received:', config);
         
         const supabaseUrl = config.supabase_url;
         const supabaseKey = config.supabase_anon_key;
         
+        console.log('Supabase URL:', supabaseUrl);
+        console.log('Supabase Key present:', !!supabaseKey);
+        
         if (window.supabase && supabaseUrl && supabaseKey) {
             supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+            console.log('Supabase client created successfully');
             
             // Проверяем текущую сессию
             const { data: { session } } = await supabase.auth.getSession();
@@ -34,6 +45,12 @@ async function initSupabase() {
                     showAuth();
                 }
             });
+        } else {
+            console.log('Missing requirements:', {
+                windowSupabase: !!window.supabase,
+                supabaseUrl: !!supabaseUrl,
+                supabaseKey: !!supabaseKey
+            });
         }
     } catch (error) {
         console.error('Ошибка инициализации Supabase:', error);
@@ -43,8 +60,11 @@ async function initSupabase() {
 
 // Функции аутентификации
 async function signIn() {
+    console.log('signIn() called');
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    
+    console.log('Email:', email, 'Password length:', password.length);
     
     if (!email || !password) {
         showError('Введите email и пароль');
@@ -52,14 +72,19 @@ async function signIn() {
     }
     
     if (supabase) {
+        console.log('Attempting to sign in with Supabase...');
         const { data, error } = await supabase.auth.signInWithPassword({
             email, password
         });
         
         if (error) {
+            console.error('Sign in error:', error);
             showError('Ошибка входа: ' + error.message);
+        } else {
+            console.log('Sign in successful:', data);
         }
     } else {
+        console.log('Supabase not initialized');
         showError('Supabase не настроен. Сначала настройте базу данных.');
         return;
     }
