@@ -447,14 +447,79 @@ async function loadTrades() {
 }
 
 // Утилиты для уведомлений
-function showError(message) {
-    // Простое отображение ошибок (можно улучшить)
-    alert('Ошибка: ' + message);
+function showToast(message, type = 'info', title = null, duration = 5000) {
+    const container = document.getElementById('toast-container');
+    
+    // Определяем иконки для разных типов
+    const icons = {
+        success: '✅',
+        error: '❌',
+        warning: '⚠️',
+        info: 'ℹ️'
+    };
+    
+    // Определяем заголовки по умолчанию
+    const defaultTitles = {
+        success: 'Успешно',
+        error: 'Ошибка',
+        warning: 'Внимание',
+        info: 'Информация'
+    };
+    
+    // Создаем элемент toast
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    toast.innerHTML = `
+        <div class="toast-icon">${icons[type] || icons.info}</div>
+        <div class="toast-content">
+            ${title ? `<div class="toast-title">${title}</div>` : `<div class="toast-title">${defaultTitles[type] || defaultTitles.info}</div>`}
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="closeToast(this.parentElement)">×</button>
+    `;
+    
+    // Добавляем в контейнер
+    container.appendChild(toast);
+    
+    // Показываем с анимацией
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 100);
+    
+    // Автоматически скрываем через заданное время
+    if (duration > 0) {
+        setTimeout(() => {
+            closeToast(toast);
+        }, duration);
+    }
+    
+    return toast;
 }
 
-function showSuccess(message) {
-    // Простое отображение успеха (можно улучшить)
-    alert('Успех: ' + message);
+function closeToast(toast) {
+    toast.classList.remove('show');
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.parentElement.removeChild(toast);
+        }
+    }, 300);
+}
+
+function showError(message, title = null) {
+    showToast(message, 'error', title);
+}
+
+function showSuccess(message, title = null) {
+    showToast(message, 'success', title);
+}
+
+function showWarning(message, title = null) {
+    showToast(message, 'warning', title);
+}
+
+function showInfo(message, title = null) {
+    showToast(message, 'info', title);
 }
 
 // Инициализация при загрузке страницы
